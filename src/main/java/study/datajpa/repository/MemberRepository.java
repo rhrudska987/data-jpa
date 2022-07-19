@@ -12,7 +12,7 @@ import javax.persistence.QueryHint;
 import java.util.List;
 import java.util.Optional;
 
-public interface MemberRepository extends JpaRepository<Member, Long> { //pk가 long으로 매핑이 되어있음
+public interface MemberRepository extends JpaRepository<Member, Long>, MemberRepositoryCustom { //pk가 long으로 매핑이 되어있음
 
     List<Member> findByUsernameAndAgeGreaterThan(String username, int age);
 
@@ -56,4 +56,16 @@ public interface MemberRepository extends JpaRepository<Member, Long> { //pk가 
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Member> findLockByUsername(String username);
+
+    List<NestedClosedProjections> findProjectionsByUsername(@Param("username") String username);
+
+    //NativeQuery는 최후의 수단
+    @Query(value = "select * from member where username = ?", nativeQuery = true)
+    Member findByNativeQuery(String username);
+
+    @Query(value = "select m.member_id as id, m.username, t.name as teamName" +
+            "from member m left join team t",
+            countQuery = "select count(*) from member",
+            nativeQuery = true)
+    Page<MemberProjection> findByNativeProjection(Pageable pageable);
 }
